@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel de Clientes por Consultor</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      :root {
+        --primary: #3E6A6D;
+        --primary-dark: #1E4148;
+        --primary-light: #6D9394;
+        --success: #6D9394;
+        --warning: #C4A35A;
+        --danger: #A85A5A;
+        --gray-50: #CFDDDC;
+        --gray-100: #CFDDDC;
+        --gray-200: #A8BDBB;
+        --gray-300: #6D9394;
+        --gray-500: #3E6A6D;
+        --gray-700: #1E4148;
+        --gray-900: #022028;
+        --surface: #A8BDBB;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+        background: var(--gray-50);
+        color: var(--gray-900);
+        line-height: 1.5;
+      }
+
+      .screen {
+        min-height: 100vh;
+      }
+
+      /* LOGIN */
+      #loginScreen {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #3E6A6D 0%, #022028 100%);
+      }
+
+      .login-box {
+        background: var(--surface);
+        padding: 40px;
+        border-radius: 16px;
+        box-shadow: 0 20px 60px rgba(2, 32, 40, 0.3);
+        width: 100%;
+        max-width: 400px;
+        text-align: center;
+      }
+
+      .login-box h1 {
+        font-size: 24px;
+        margin-bottom: 24px;
+        color: var(--gray-900);
+      }
+
+      .login-box input {
+        width: 100%;
+        padding: 12px 16px;
+        margin-bottom: 16px;
+        background: var(--gray-50);
+        border: 2px solid var(--gray-300);
+        border-radius: 8px;
+        font-size: 15px;
+        transition: border-color 0.2s;
+      }
+
+      .login-box input:focus {
+        outline: none;
+        border-color: var(--primary);
+      }
+
+      .login-box button {
+        width: 100%;
+        padding: 12px;
+        background: var(--primary);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.2s;
+      }
+
+      .login-box button:hover {
+        background: var(--primary-dark);
+      }
+
+      .login-box button:disabled {
+        background: var(--gray-300);
+        cursor: not-allowed;
+      }
+
+      .error-msg {
+        margin-top: 16px;
+        padding: 12px;
+        background: #fde8e8;
+        color: #7a2d2d;
+        border-radius: 8px;
+        font-size: 14px;
+      }
+
+      /* TOPBAR */
+      .topbar {
+        background: var(--surface);
+        border-bottom: 1px solid var(--gray-300);
+        padding: 16px 24px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        box-shadow: 0 1px 3px rgba(2, 32, 40, 0.08);
+      }
+
+      .topbar-left h1 {
+        font-size: 20px;
+        font-weight: 600;
+        color: var(--gray-900);
+      }
+
+      .topbar-right {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+      }
+
+      .btn-logout {
+        padding: 8px 16px;
+        background: var(--gray-100);
+        color: var(--gray-700);
+        border: 1px solid var(--gray-300);
+        border-radius: 6px;
+        font-size: 14px;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+
+      .btn-logout:hover {
+        background: var(--gray-200);
+      }
+
+      /* CONTAINER */
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 24px;
+      }
+
+      /* RESUMO */
+      .historico-summary {
+        display: flex;
+        gap: 20px;
+        margin-bottom: 24px;
+        flex-wrap: wrap;
+      }
+
+      .summary-card {
+        flex: 1;
+        min-width: 200px;
+        background: var(--surface);
+        border: 2px solid var(--primary);
+        border-radius: 12px;
+        padding: 24px;
+        text-align: center;
+        box-shadow: 0 4px 12px rgba(62, 106, 109, 0.15);
+      }
+
+      .summary-label {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--gray-500);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 8px;
+      }
+
+      .summary-value {
+        font-size: 36px;
+        font-weight: 700;
+        color: var(--primary-dark);
+      }
+
+      /* TOOLBAR DE BUSCA E FILTROS */
+      .toolbar {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+      }
+
+      .search-input {
+        flex: 2;
+        min-width: 200px;
+        padding: 10px 16px;
+        border: 2px solid var(--gray-300);
+        border-radius: 8px;
+        font-size: 15px;
+        background: var(--surface);
+        transition: border-color 0.2s;
+      }
+
+      .search-input:focus {
+        outline: none;
+        border-color: var(--primary);
+      }
+
+      .select-filter {
+        flex: 1;
+        min-width: 180px;
+        padding: 10px 16px;
+        border: 2px solid var(--gray-300);
+        border-radius: 8px;
+        font-size: 15px;
+        background: var(--surface);
+        color: var(--gray-900);
+        cursor: pointer;
+        transition: border-color 0.2s;
+      }
+
+      .select-filter:focus {
+        outline: none;
+        border-color: var(--primary);
+      }
+
+      /* TABELA */
+      .historico-container {
+        background: var(--surface);
+        border: 1px solid var(--gray-300);
+        border-radius: 12px;
+        overflow-x: auto;
+      }
+
+      .historico-table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      .historico-table thead {
+        background: var(--primary);
+        color: white;
+      }
+
+      .historico-table th {
+        padding: 16px;
+        text-align: left;
+        font-weight: 600;
+        font-size: 14px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      .historico-table tbody tr {
+        border-bottom: 1px solid var(--gray-200);
+        transition: background 0.2s;
+      }
+
+      .historico-table tbody tr:hover {
+        background: var(--gray-50);
+      }
+
+      .historico-table td {
+        padding: 14px 16px;
+        font-size: 14px;
+        color: var(--gray-900);
+      }
+
+      .badge-liquidez {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 600;
+        background: var(--primary-light);
+        color: white;
+      }
+
+      .hidden {
+        display: none !important;
+      }
+
+      @media (max-width: 768px) {
+        .topbar {
+          flex-direction: column;
+          gap: 12px;
+        }
+
+        .topbar-right {
+          width: 100%;
+          justify-content: space-between;
+        }
+
+        .container {
+          padding: 16px;
+        }
+
+        .historico-summary {
+          flex-direction: column;
+        }
+
+        .summary-card {
+          min-width: 100%;
+        }
+
+        .toolbar {
+          flex-direction: column;
+          align-items: stretch;
+        }
+
+        .search-input, .select-filter {
+          width: 100%;
+        }
+
+        .historico-table {
+          font-size: 13px;
+        }
+
+        .historico-table th,
+        .historico-table td {
+          padding: 10px 8px;
+        }
+      }
+    </style>
+</head>
+<body>
+
+    <!-- TELA DE LOGIN -->
+    <div id="loginScreen" class="screen">
+        <div class="login-box">
+            <h1>Acesso do Consultor</h1>
+            
+            <form id="login-form" onsubmit="handleLogin(event)">
+                <input type="text" id="consultant-id" required placeholder="" />
+                <button type="submit" id="btn-login">Entrar no Painel</button>
+            </form>
+
+            <div id="login-error" class="error-msg hidden">
+                ID não encontrado ou falha ao carregar a planilha. Tente novamente.
+            </div>
+        </div>
+    </div>
+
+    <!-- PAINEL PRINCIPAL -->
+    <div id="dashboardScreen" class="screen hidden">
+        
+        <!-- BARRA SUPERIOR -->
+        <div class="topbar">
+            <div class="topbar-left">
+                <h1 id="consultant-name">---</h1>
+            </div>
+            <div class="topbar-right">
+                <span id="role-badge" class="badge-liquidez">Consultor Logado</span>
+                <button onclick="handleLogout()" class="btn-logout">Sair</button>
+            </div>
+        </div>
+
+        <div class="container">
+
+            <!-- CARDS DE RESUMO -->
+            <div class="historico-summary">
+                <div class="summary-card">
+                    <div class="summary-label">Total de Registros / Posições</div>
+                    <div id="total-clients" class="summary-value">0</div>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-label">Total investido</div>
+                    <div id="total-auc" class="summary-value">R$ 0,00</div>
+                </div>
+            </div>
+
+            <!-- TOOLBAR COM BUSCA E FILTRO DE LIQUIDEZ -->
+            <div class="toolbar">
+                <input type="text" id="search-input" class="search-input" onkeyup="filterTable()" placeholder="Buscar cliente ou assessor..." />
+                
+                <select id="liquidity-filter" class="select-filter" onchange="filterTable()">
+                    <option value="">Todas as Liquidezes</option>
+                </select>
+            </div>
+
+            <!-- TABELA DE CLIENTES -->
+            <div class="historico-container">
+                <table class="historico-table">
+                    <thead>
+                        <tr>
+                            <th>Nome do Cliente</th>
+                            <th>Assessor</th>
+                            <th>Total investido</th>
+                            <th style="text-align: center;">Liquidez</th>
+                        </tr>
+                    </thead>
+                    <tbody id="clients-table-body">
+                        <!-- Linhas injetadas dinamicamente -->
+                    </tbody>
+                </table>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        const ADMIN_ID = "0001";
+        const SPREADSHEET_ID = "1Fa3PobjxHamWy-yFYOyNUh1LKE072wJ56RaW2yf5utU";
+
+        let excelData = [];
+        let currentConsultantClients = [];
+        let pendingCallback = null;
+
+        // Callback global disparado automaticamente pelo Google Sheets via Script Injection (JSONP)
+        window.handleGoogleSheetResponse = function(response) {
+            try {
+                const rows = response.table.rows;
+                excelData = rows.map(r => {
+                    const cells = r.c;
+                    const valB = cells[1] ? (cells[1].v !== null ? cells[1].v : cells[1].f) : '';
+                    const valC = cells[2] ? (cells[2].v !== null ? cells[2].v : cells[2].f) : '';
+                    
+                    let valE = 0;
+                    if (cells[4]) {
+                        if (typeof cells[4].v === 'number') valE = cells[4].v;
+                        else if (cells[4].v) valE = parseFloat(String(cells[4].v).replace(/\./g, '').replace(',', '.')) || 0;
+                    }
+
+                    const valF = cells[5] ? (cells[5].v !== null ? cells[5].v : cells[5].f) : '-';
+                    const valG = cells[6] ? (cells[6].v !== null ? cells[6].v : cells[6].f) : '';
+                    const valH = cells[7] ? String(cells[7].v !== null ? cells[7].v : cells[7].f).trim() : '';
+
+                    return {
+                        "B": String(valB || '').trim() || 'Sem Nome',
+                        "C": String(valC || '').trim() || 'Sem Assessor',
+                        "E": valE || 0,
+                        "F": String(valF || '-').trim(),
+                        "G": String(valG || '').trim() || 'Não identificado',
+                        "H": valH
+                    };
+                }).filter(item => item.H !== '' && item.H !== 'ID' && item.H !== 'null');
+
+                if (pendingCallback) pendingCallback(true);
+            } catch (err) {
+                console.error("Erro ao processar dados da planilha:", err);
+                if (pendingCallback) pendingCallback(false);
+            }
+        };
+
+        // Função para carregar a planilha via injeção de Tag Script (evita limitações de CORS e arquivo local)
+        function fetchSheetDataJSONP(callback) {
+            pendingCallback = callback;
+            
+            const oldScript = document.getElementById('gviz-script');
+            if (oldScript) oldScript.remove();
+
+            const script = document.createElement('script');
+            script.id = 'gviz-script';
+            script.src = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?sheet=Contas&tqx=responseHandler:handleGoogleSheetResponse`;
+            
+            script.onerror = function() {
+                if (pendingCallback) pendingCallback(false);
+            };
+
+            document.body.appendChild(script);
+        }
+
+        // Agrupa registros somando o total investido para mesma Liquidez
+        function aggregateData(rawData) {
+            const grouped = {};
+
+            rawData.forEach(item => {
+                const key = `${item.B.toUpperCase()}_${item.C.toUpperCase()}_${item.F.toUpperCase()}`;
+
+                if (!grouped[key]) {
+                    grouped[key] = {
+                        "B": item.B,
+                        "C": item.C,
+                        "E": item.E,
+                        "F": item.F,
+                        "G": item.G,
+                        "H": item.H
+                    };
+                } else {
+                    grouped[key].E += item.E;
+                }
+            });
+
+            return Object.values(grouped);
+        }
+
+        // Preenche as opções do select de liquidez com os valores únicos dos clientes exibidos
+        function populateLiquidityOptions(data) {
+            const select = document.getElementById('liquidity-filter');
+            select.innerHTML = '<option value="">Todas as Liquidezes</option>';
+
+            const uniqueLiquidity = [...new Set(data.map(item => item.F))].sort();
+
+            uniqueLiquidity.forEach(liq => {
+                const option = document.createElement('option');
+                option.value = liq;
+                option.textContent = `Liquidez: ${liq}`;
+                select.appendChild(option);
+            });
+        }
+
+        // Processar Login
+        function handleLogin(event) {
+            event.preventDefault();
+            const inputId = document.getElementById('consultant-id').value.trim();
+            const errorDiv = document.getElementById('login-error');
+            const btnLogin = document.getElementById('btn-login');
+
+            btnLogin.innerText = "Carregando...";
+            btnLogin.disabled = true;
+
+            fetchSheetDataJSONP(function(success) {
+                btnLogin.innerText = "Entrar no Painel";
+                btnLogin.disabled = false;
+
+                if (!success || excelData.length === 0) {
+                    errorDiv.innerText = "Não foi possível carregar os dados. Verifique sua conexão ou as permissões da planilha.";
+                    errorDiv.classList.remove('hidden');
+                    return;
+                }
+
+                // Se for Admin (0001)
+                if (inputId === ADMIN_ID) {
+                    errorDiv.classList.add('hidden');
+                    currentConsultantClients = aggregateData(excelData);
+                    
+                    document.getElementById('consultant-name').innerText = "Administrador Base";
+                    document.getElementById('role-badge').innerText = "Acesso Administrador";
+
+                    populateLiquidityOptions(currentConsultantClients);
+                    renderDashboard(currentConsultantClients);
+                    document.getElementById('loginScreen').classList.add('hidden');
+                    document.getElementById('dashboardScreen').classList.remove('hidden');
+                    return;
+                }
+
+                // Se for Consultor normal (Compara com Coluna H)
+                const matchedRecords = excelData.filter(item => String(item.H) === inputId);
+
+                if (matchedRecords.length === 0) {
+                    errorDiv.innerText = "ID não encontrado na planilha. Verifique e tente novamente.";
+                    errorDiv.classList.remove('hidden');
+                    return;
+                }
+
+                errorDiv.classList.add('hidden');
+                currentConsultantClients = aggregateData(matchedRecords);
+
+                const consultantName = matchedRecords[0].G;
+
+                document.getElementById('consultant-name').innerText = consultantName;
+                document.getElementById('role-badge').innerText = "Consultor Logado";
+
+                populateLiquidityOptions(currentConsultantClients);
+                renderDashboard(currentConsultantClients);
+
+                document.getElementById('loginScreen').classList.add('hidden');
+                document.getElementById('dashboardScreen').classList.remove('hidden');
+            });
+        }
+
+        // Renderizar linhas na tabela
+        function renderDashboard(data) {
+            const tbody = document.getElementById('clients-table-body');
+            tbody.innerHTML = '';
+
+            let totalAuc = 0;
+
+            data.forEach(client => {
+                totalAuc += client.E;
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td style="font-weight: 600;">${client.B}</td>
+                    <td>${client.C}</td>
+                    <td style="font-weight: 600;">
+                        ${client.E.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                    </td>
+                    <td style="text-align: center;">
+                        <span class="badge-liquidez">
+                            ${client.F}
+                        </span>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            document.getElementById('total-clients').innerText = data.length;
+            document.getElementById('total-auc').innerText = totalAuc.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        }
+
+        // Filtro de busca (Nome/Assessor) e Seleção por Liquidez
+        function filterTable() {
+            const searchQuery = document.getElementById('search-input').value.toLowerCase();
+            const selectedLiquidity = document.getElementById('liquidity-filter').value;
+
+            const filtered = currentConsultantClients.filter(c => {
+                const matchesSearch = c.B.toLowerCase().includes(searchQuery) || c.C.toLowerCase().includes(searchQuery);
+                const matchesLiquidity = selectedLiquidity === "" || c.F === selectedLiquidity;
+
+                return matchesSearch && matchesLiquidity;
+            });
+
+            renderDashboard(filtered);
+        }
+
+        // Logout
+        function handleLogout() {
+            document.getElementById('login-form').reset();
+            document.getElementById('search-input').value = '';
+            document.getElementById('liquidity-filter').value = '';
+            document.getElementById('dashboardScreen').classList.add('hidden');
+            document.getElementById('loginScreen').classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
