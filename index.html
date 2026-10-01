@@ -110,6 +110,16 @@
         font-size: 14px;
       }
 
+      .info-msg {
+        margin-bottom: 16px;
+        padding: 10px;
+        background: #e1f0f0;
+        color: var(--primary-dark);
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 600;
+      }
+
       /* TOPBAR */
       .topbar {
         background: var(--surface);
@@ -338,8 +348,15 @@
         <div class="login-box">
             <h1>Acesso do Consultor</h1>
             
+            <div id="first-access-info" class="info-msg hidden">
+                Primeiro acesso detectado! Crie uma senha para o seu ID.
+            </div>
+
             <form id="login-form" onsubmit="handleLogin(event)">
-                <input type="text" id="consultant-id" required placeholder="" />
+                <input type="text" id="consultant-id" required placeholder="Digite seu ID" oninput="checkFirstAccess()" />
+                <input type="password" id="consultant-password" required placeholder="Sua Senha" />
+                <input type="password" id="consultant-confirm-password" class="hidden" placeholder="Confirme a Nova Senha" />
+                
                 <button type="submit" id="btn-login">Entrar no Painel</button>
             </form>
 
@@ -450,7 +467,7 @@
             }
         };
 
-        // Função para carregar a planilha via injeção de Tag Script (evita limitações de CORS e arquivo local)
+        // Função para carregar a planilha via injeção de Tag Script
         function fetchSheetDataJSONP(callback) {
             pendingCallback = callback;
             
@@ -466,6 +483,36 @@
             };
 
             document.body.appendChild(script);
+        }
+
+        // Checa em tempo real se o ID digitado é um primeiro acesso
+        function checkFirstAccess() {
+            const inputId = document.getElementById('consultant-id').value.trim();
+            const confirmField = document.getElementById('consultant-confirm-password');
+            const infoMsg = document.getElementById('first-access-info');
+            const btnLogin = document.getElementById('btn-login');
+
+            if (!inputId) {
+                confirmField.classList.add('hidden');
+                confirmField.removeAttribute('required');
+                infoMsg.classList.add('hidden');
+                btnLogin.innerText = "Entrar no Painel";
+                return;
+            }
+
+            const savedPassword = localStorage.getItem(`consultant_pass_${inputId}`);
+
+            if (!savedPassword) {
+                confirmField.classList.remove('hidden');
+                confirmField.setAttribute('required', 'required');
+                infoMsg.classList.remove('hidden');
+                btnLogin.innerText = "Cadastrar Senha e Entrar";
+            } else {
+                confirmField.classList.add('hidden');
+                confirmField.removeAttribute('required');
+                infoMsg.classList.add('hidden');
+                btnLogin.innerText = "Entrar no Painel";
+            }
         }
 
         // Agrupa registros somando o total investido para mesma Liquidez
@@ -492,7 +539,7 @@
             return Object.values(grouped);
         }
 
-        // Preenche as opções do select de liquidez com os valores únicos dos clientes exibidos
+        // Preenche as opções do select de liquidez
         function populateLiquidityOptions(data) {
             const select = document.getElementById('liquidity-filter');
             select.innerHTML = '<option value="">Todas as Liquidezes</option>';
@@ -507,18 +554,50 @@
             });
         }
 
-        // Processar Login
+        // Processar Login e Validação de Senha
         function handleLogin(event) {
             event.preventDefault();
             const inputId = document.getElementById('consultant-id').value.trim();
+            const inputPassword = document.getElementById('consultant-password').value;
+            const confirmPassword = document.getElementById('consultant-confirm-password').value;
+
             const errorDiv = document.getElementById('login-error');
             const btnLogin = document.getElementById('btn-login');
 
+            errorDiv.classList.add('hidden');
+
+            const savedPassword = localStorage.getItem(`consultant_pass_${inputId}`);
+
+            // --- TRATAMENTO DE PRIMEIRO ACESSO ---
+            if (!savedPassword) {
+                if (inputPassword.length < 4) {
+                    errorDiv.innerText = "A senha deve ter no mínimo 4 caracteres.";
+                    errorDiv.classList.remove('hidden');
+                    return;
+                }
+
+                if (inputPassword !== confirmPassword) {
+                    errorDiv.innerText = "As senhas não coincidem. Digite novamente.";
+                    errorDiv.classList.remove('hidden');
+                    return;
+                }
+            } 
+            // --- TRATAMENTO DE ACESSO REGULAR ---
+            else {
+                if (inputPassword !== savedPassword) {
+                    errorDiv.innerText = "Senha incorreta. Tente novamente.";
+                    errorDiv.classList.remove('hidden');
+                    return;
+                }
+            }
+
+            // Inicia busca na planilha
+            const originalBtnText = btnLogin.innerText;
             btnLogin.innerText = "Carregando...";
             btnLogin.disabled = true;
 
             fetchSheetDataJSONP(function(success) {
-                btnLogin.innerText = "Entrar no Painel";
+                btnLogin.innerText = originalBtnText;
                 btnLogin.disabled = false;
 
                 if (!success || excelData.length === 0) {
@@ -529,6 +608,10 @@
 
                 // Se for Admin (0001)
                 if (inputId === ADMIN_ID) {
+                    if (!savedPassword) {
+                        localStorage.setItem(`consultant_pass_${inputId}`, inputPassword);
+                    }
+
                     errorDiv.classList.add('hidden');
                     currentConsultantClients = aggregateData(excelData);
                     
@@ -549,6 +632,11 @@
                     errorDiv.innerText = "ID não encontrado na planilha. Verifique e tente novamente.";
                     errorDiv.classList.remove('hidden');
                     return;
+                }
+
+                // Se for o primeiro acesso e o ID for válido na planilha, salva a senha
+                if (!savedPassword) {
+                    localStorage.setItem(`consultant_pass_${inputId}`, inputPassword);
                 }
 
                 errorDiv.classList.add('hidden');
@@ -617,6 +705,7 @@
             document.getElementById('login-form').reset();
             document.getElementById('search-input').value = '';
             document.getElementById('liquidity-filter').value = '';
+            checkFirstAccess();
             document.getElementById('dashboardScreen').classList.add('hidden');
             document.getElementById('loginScreen').classList.remove('hidden');
         }
