@@ -429,7 +429,7 @@
         const ADMIN_ID = "0001";
         const SPREADSHEET_ID = "1Fa3PobjxHamWy-yFYOyNUh1LKE072wJ56RaW2yf5utU";
 
-        // DOMÍNIOS AUTORIZADOS DE SEGURANÇA DO NAVEGADOR
+        // DOMÍNIOS AUTORIZADOS DE SEGURANÇA
         const DOMINIOS_W1_PERMITIDOS = [
             '@w1.com.br',
             '@w1.com',
@@ -441,7 +441,7 @@
         let currentConsultantClients = [];
         let pendingCallback = null;
 
-        // --- VALIDAÇÃO DE SEGURANÇA DE NAVEGADOR E E-MAIL ---
+        // --- VALIDAÇÃO DE SEGURANÇA NO GITHUB PAGES ---
         function ehNavegadorGoogleChrome() {
             const ua = navigator.userAgent;
             return /Chrome/i.test(ua) || /CriOS/i.test(ua) || /Google/i.test(navigator.vendor || '');
@@ -537,7 +537,6 @@
             }
         }
 
-        // Agrupa registros somando o total investido para mesma Liquidez
         function aggregateData(rawData) {
             const grouped = {};
 
@@ -561,7 +560,6 @@
             return Object.values(grouped);
         }
 
-        // Preenche as opções do select de liquidez
         function populateLiquidityOptions(data) {
             const select = document.getElementById('liquidity-filter');
             select.innerHTML = '<option value="">Todas as Liquidezes</option>';
@@ -576,7 +574,7 @@
             });
         }
 
-        // Processar Login e Validação de Senha + Validação de Segurança do Navegador
+        // Processar Login e Validação de Senha no GitHub Pages
         function handleLogin(event) {
             event.preventDefault();
             const inputId = document.getElementById('consultant-id').value.trim();
@@ -588,129 +586,112 @@
 
             errorDiv.classList.add('hidden');
 
-            // --- 1. BLOQUEIO DE NAVEGADOR FORA DO GOOGLE CHROME ---
+            // 1. BLOQUEIO DE NAVEGADOR FORA DO GOOGLE CHROME
             if (!ehNavegadorGoogleChrome()) {
-                errorDiv.innerHTML = "⚠️ <b>Acesso Negado:</b> Esta aplicação deve ser acessada exclusivamente através do navegador <b>Google Chrome</b>.";
+                errorDiv.innerHTML = "⚠️ <b>Acesso Negado:</b> Esta aplicação deve ser acessada exclusivamente pelo navegador <b>Google Chrome</b>.";
                 errorDiv.classList.remove('hidden');
                 return;
             }
 
-            // --- 2. REGRA DE E-MAIL CORPORATIVO (@w1... / @w1capital...) ---
+            // 2. REGRA DE E-MAIL CORPORATIVO (@w1... / @w1capital...)
             if (inputId !== ADMIN_ID && !validarDominioEmailW1(inputId)) {
                 errorDiv.innerHTML = "🔒 <b>E-mail Inválido:</b> O acesso é permitido apenas para e-mails corporativos W1 (ex: <i>usuario@w1capital.com.br</i> ou <i>usuario@w1.com.br</i>).";
                 errorDiv.classList.remove('hidden');
                 return;
             }
 
-            // --- 3. VALIDAÇÃO ADICIONAL DE SESSÃO SE EXECUTADO NO GOOGLE APPS SCRIPT ---
-            if (typeof google !== 'undefined' && google.script && google.script.run) {
-                google.script.run.withSuccessHandler(function(s) {
-                    if (s && !s.autorizado) {
-                        errorDiv.innerHTML = "🔒 <b>Acesso Bloqueado:</b> " + s.msg;
-                        errorDiv.classList.remove('hidden');
-                        return;
-                    }
-                    executarValidacaoLogin();
-                }).validarSessaoGoogle();
-            } else {
-                executarValidacaoLogin();
-            }
+            const savedPassword = localStorage.getItem(`consultant_pass_${inputId}`);
 
-            function executarValidacaoLogin() {
-                const savedPassword = localStorage.getItem(`consultant_pass_${inputId}`);
-
-                // --- TRATAMENTO DE PRIMEIRO ACESSO ---
-                if (!savedPassword) {
-                    if (inputPassword.length < 4) {
-                        errorDiv.innerText = "A senha deve ter no mínimo 4 caracteres.";
-                        errorDiv.classList.remove('hidden');
-                        return;
-                    }
-
-                    if (inputPassword !== confirmPassword) {
-                        errorDiv.innerText = "As senhas não coincidem. Digite novamente.";
-                        errorDiv.classList.remove('hidden');
-                        return;
-                    }
-                } 
-                // --- TRATAMENTO DE ACESSO REGULAR ---
-                else {
-                    if (inputPassword !== savedPassword) {
-                        errorDiv.innerText = "Senha incorreta. Tente novamente.";
-                        errorDiv.classList.remove('hidden');
-                        return;
-                    }
+            // --- TRATAMENTO DE PRIMEIRO ACESSO ---
+            if (!savedPassword) {
+                if (inputPassword.length < 4) {
+                    errorDiv.innerText = "A senha deve ter no mínimo 4 caracteres.";
+                    errorDiv.classList.remove('hidden');
+                    return;
                 }
 
-                // Inicia busca na planilha
-                const originalBtnText = btnLogin.innerText;
-                btnLogin.innerText = "Carregando...";
-                btnLogin.disabled = true;
+                if (inputPassword !== confirmPassword) {
+                    errorDiv.innerText = "As senhas não coincidem. Digite novamente.";
+                    errorDiv.classList.remove('hidden');
+                    return;
+                }
+            } 
+            // --- TRATAMENTO DE ACESSO REGULAR ---
+            else {
+                if (inputPassword !== savedPassword) {
+                    errorDiv.innerText = "Senha incorreta. Tente novamente.";
+                    errorDiv.classList.remove('hidden');
+                    return;
+                }
+            }
 
-                fetchSheetDataJSONP(function(success) {
-                    btnLogin.innerText = originalBtnText;
-                    btnLogin.disabled = false;
+            // Busca na planilha do Google Sheets
+            const originalBtnText = btnLogin.innerText;
+            btnLogin.innerText = "Carregando...";
+            btnLogin.disabled = true;
 
-                    if (!success || excelData.length === 0) {
-                        errorDiv.innerText = "Não foi possível carregar os dados. Verifique sua conexão ou as permissões da planilha.";
-                        errorDiv.classList.remove('hidden');
-                        return;
-                    }
+            fetchSheetDataJSONP(function(success) {
+                btnLogin.innerText = originalBtnText;
+                btnLogin.disabled = false;
 
-                    // Se for Admin (0001)
-                    if (inputId === ADMIN_ID) {
-                        if (!savedPassword) {
-                            localStorage.setItem(`consultant_pass_${inputId}`, inputPassword);
-                        }
+                if (!success || excelData.length === 0) {
+                    errorDiv.innerText = "Não foi possível carregar os dados. Verifique sua conexão ou as permissões da planilha.";
+                    errorDiv.classList.remove('hidden');
+                    return;
+                }
 
-                        errorDiv.classList.add('hidden');
-                        currentConsultantClients = aggregateData(excelData);
-                        
-                        document.getElementById('consultant-name').innerText = "Administrador Base";
-                        document.getElementById('role-badge').innerText = "Acesso Administrador";
-
-                        populateLiquidityOptions(currentConsultantClients);
-                        renderDashboard(currentConsultantClients);
-                        document.getElementById('loginScreen').classList.add('hidden');
-                        document.getElementById('dashboardScreen').classList.remove('hidden');
-                        return;
-                    }
-
-                    // Se for Consultor (Compara com E-mail/ID da Coluna H)
-                    const matchedRecords = excelData.filter(item => 
-                        String(item.H).toLowerCase() === inputId.toLowerCase() ||
-                        String(item.H).toLowerCase() === inputId.split('@')[0].toLowerCase()
-                    );
-
-                    if (matchedRecords.length === 0) {
-                        errorDiv.innerText = "E-mail/ID não encontrado na planilha. Verifique e tente novamente.";
-                        errorDiv.classList.remove('hidden');
-                        return;
-                    }
-
-                    // Se for o primeiro acesso e o ID for válido na planilha, salva a senha
+                // Se for Admin (0001)
+                if (inputId === ADMIN_ID) {
                     if (!savedPassword) {
                         localStorage.setItem(`consultant_pass_${inputId}`, inputPassword);
                     }
 
                     errorDiv.classList.add('hidden');
-                    currentConsultantClients = aggregateData(matchedRecords);
-
-                    const consultantName = matchedRecords[0].G;
-
-                    document.getElementById('consultant-name').innerText = consultantName;
-                    document.getElementById('role-badge').innerText = "Consultor Logado";
+                    currentConsultantClients = aggregateData(excelData);
+                    
+                    document.getElementById('consultant-name').innerText = "Administrador Base";
+                    document.getElementById('role-badge').innerText = "Acesso Administrador";
 
                     populateLiquidityOptions(currentConsultantClients);
                     renderDashboard(currentConsultantClients);
-
                     document.getElementById('loginScreen').classList.add('hidden');
                     document.getElementById('dashboardScreen').classList.remove('hidden');
+                    return;
+                }
+
+                // Se for Consultor (compara por E-mail completo ou apenas o ID antes do @)
+                const prefixoId = inputId.split('@')[0].toLowerCase();
+                const matchedRecords = excelData.filter(item => {
+                    const idPlanilha = String(item.H).toLowerCase().trim();
+                    return idPlanilha === inputId.toLowerCase() || idPlanilha === prefixoId;
                 });
-            }
+
+                if (matchedRecords.length === 0) {
+                    errorDiv.innerText = "E-mail/ID não encontrado na planilha. Verifique e tente novamente.";
+                    errorDiv.classList.remove('hidden');
+                    return;
+                }
+
+                if (!savedPassword) {
+                    localStorage.setItem(`consultant_pass_${inputId}`, inputPassword);
+                }
+
+                errorDiv.classList.add('hidden');
+                currentConsultantClients = aggregateData(matchedRecords);
+
+                const consultantName = matchedRecords[0].G;
+
+                document.getElementById('consultant-name').innerText = consultantName;
+                document.getElementById('role-badge').innerText = "Consultor Logado";
+
+                populateLiquidityOptions(currentConsultantClients);
+                renderDashboard(currentConsultantClients);
+
+                document.getElementById('loginScreen').classList.add('hidden');
+                document.getElementById('dashboardScreen').classList.remove('hidden');
+            });
         }
 
-        // Renderizar linhas na tabela
         function renderDashboard(data) {
             const tbody = document.getElementById('clients-table-body');
             tbody.innerHTML = '';
@@ -740,7 +721,6 @@
             document.getElementById('total-auc').innerText = totalAuc.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
         }
 
-        // Filtro de busca (Nome/Assessor) e Seleção por Liquidez
         function filterTable() {
             const searchQuery = document.getElementById('search-input').value.toLowerCase();
             const selectedLiquidity = document.getElementById('liquidity-filter').value;
@@ -755,7 +735,6 @@
             renderDashboard(filtered);
         }
 
-        // Logout
         function handleLogout() {
             document.getElementById('login-form').reset();
             document.getElementById('search-input').value = '';
